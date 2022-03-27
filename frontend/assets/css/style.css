@@ -53,8 +53,6 @@ form button:hover {
     background: var(--primary-color-dark);
 }
 
-h3 {
-    position: absolute;
-    margin-top: 30px;
-    margin-left: 400px;
+h1 {
+    color: orange;
 }
