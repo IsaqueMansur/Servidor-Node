@@ -2,6 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const flash = require('connect-flash');
+const routes = require("./routes");
+const path = require('path');
+const helmet = require('helmet');
+const csrf = require('csurf');
+
 mongoose.connect(process.env.CONNECTIONSTRING, {useNewUrlParser: true, useUnifiedTopology: true})
 .then(() => {
     console.log("Conectei a base de dados");
@@ -9,16 +17,11 @@ mongoose.connect(process.env.CONNECTIONSTRING, {useNewUrlParser: true, useUnifie
 })
 .catch(e => console.log('Falha na conexão com o BD'));
 
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
-const flash = require('connect-flash');
+const {middleware, checkCsrfError, csrfMiddleware} = require('./src/middlewares/middleware.js');
 
-const routes = require("./routes");
-const path = require('path');
-const {middleware, outroMiddleware} = require('./src/middlewares/middleware.js');
-
-
+app.use(helmet());
 app.use(express.urlencoded({extended: true}));
+app.use(express.json());
 app.use(express.static(path.resolve(__dirname, 'public')));
 
 const sessionOptions = session({
@@ -38,10 +41,14 @@ app.use(flash());
 app.set('views', path.resolve(__dirname, 'src', 'views'));
 app.set('view engine', 'ejs');
 
-//nossos próprios middlewares
+app.use(csrf());
+
+//nossos middlewares
 app.use(middleware);
-app.use(outroMiddleware);
+app.use(checkCsrfError);
+app.use(csrfMiddleware);
 app.use(routes)
+
 
 app.on('pronto', () => {
     app.listen(3000, () => {
